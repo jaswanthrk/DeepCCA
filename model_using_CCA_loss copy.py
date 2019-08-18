@@ -2,14 +2,13 @@ try:
     import cPickle as thepickle
 except ImportError:
     import _pickle as thepickle
-import pickle
 import gzip
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.keras import Sequential
 from tensorflow.keras import layers
-from tensorflow.keras.optimizers import RMSprop, SGD
+from tensorflow.keras.optimizers import RMSprop
 from tensorflow.keras import backend as K
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.regularizers import l2
@@ -19,7 +18,8 @@ import matplotlib.pyplot as plt
 from linear_cca import linear_cca
 from utilities import load_data, svm_classify
 # layers.Activation
-tf.enable_eager_execution()
+# tf.enable_eager_execution()
+
 
 print('tf version: ' + tf.version.VERSION)
 print('tf.keras version :' + tf.keras.__version__)
@@ -38,10 +38,11 @@ def model_learn(data1, data2, model, epoch_num, batch_size, learning_rate, use_a
     checkpointer = ModelCheckpoint(
         filepath="temp_weights.h5", verbose=1, save_best_only=True, save_weights_only=True)
 
-    model_optimizer = SGD(lr=learning_rate, momentum=0.99)
+    model_optimizer = RMSprop(lr=learning_rate)
     model.compile(loss=cca_loss(o_dim, use_all_singular_values),
                   optimizer=model_optimizer)
-    history = model.fit([train_set_x1, train_set_x2], np.zeros(len(train_set_x1)), batch_size=batch_size, epochs=epoch_num, shuffle=True, validation_data=(
+
+    history = model.fit([train_set_x1, train_set_x2], np.zeros(len(train_set_x1)), epochs=epoch_num, shuffle=True, validation_data=(
         [valid_set_x1, valid_set_x2], np.zeros(len(valid_set_x1))), callbacks=[checkpointer])
 
     loss = plt.plot(history.history['loss'])
@@ -97,7 +98,7 @@ def test_model(model, data1, data2, outdim_size, apply_linear_cca):
         w = [None, None]
         m = [None, None]
         print("Linear CCA started!")
-        w[0], w[1], m[0], m[1] = linear_cca(
+        w[0], w[1], m[0], m[1], _ = linear_cca(
             new_data[0][0], new_data[0][1], outdim_size)
         print("Linear CCA ended!")
 
@@ -124,29 +125,25 @@ save_to = './new_features.gz'
 i_shape1 = (784, )
 i_shape2 = (784, )
 
-o_dim = 50
+o_dim = 10
 
 l_size1 = 1024
 l_size2 = 1024
 
-learning_rate = 1e-2
-use_all_singular_values = False
+learning_rate = 1e-4
+use_all_singular_values = True
 epoch_num = 50
-batch_size = 800
+batch_size = 200
 reg_par = 1e-4
 
 act = "sigmoid"
-o_act = 'sigmoid'
+o_act = 'linear'
 
-with open("data1_15.pkl", "rb") as fp:   # Unpicklin
-    data1 = pickle.load(fp)
+data1 = load_data('noisymnist_view1.gz')
+data2 = load_data('noisymnist_view2.gz')
 
-with open("data2_15.pkl", "rb") as fp:   # Unpicklin
-    data2 = pickle.load(fp)
 
 input1 = layers.Input(shape=i_shape1)
-x1 = layers.Dense(l_size1, activation=act,
-                  kernel_regularizer=l2(reg_par))(input1)
 x1 = layers.Dense(l_size1, activation=act,
                   kernel_regularizer=l2(reg_par))(input1)
 x1 = layers.Dense(l_size1, activation=act,
@@ -155,8 +152,6 @@ x1 = layers.Dense(o_dim, activation=o_act,
                   kernel_regularizer=l2(reg_par))(input1)
 
 input2 = layers.Input(shape=i_shape2)
-x2 = layers.Dense(l_size2, activation=act,
-                  kernel_regularizer=l2(reg_par))(input2)
 x2 = layers.Dense(l_size2, activation=act,
                   kernel_regularizer=l2(reg_par))(input2)
 x2 = layers.Dense(l_size2, activation=act,

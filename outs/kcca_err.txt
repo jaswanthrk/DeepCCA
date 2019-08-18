@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/jaswanthr/Project/DCCA/working/icml13/kcca_rbf.py", line 4, in <module>
+    with open('data1.pkl', 'rb') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'data1.pkl'
+Traceback (most recent call last):
+  File "/home/jaswanthr/Project/DCCA/working/icml13/kcca_rbf.py", line 4, in <module>
+    with open('data1.pkl', 'rb') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'data1.pkl'
